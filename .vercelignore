@@ -1,0 +1,3 @@
+@'
+node_modules/
+'@ | Out-File -Encoding utf8 .vercelignore
