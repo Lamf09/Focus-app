@@ -1,7 +1,6 @@
 ﻿{
   "name": "Focus App",
   "short_name": "FocusApp",
-  "description": "Gère ton temps, tes tâches et tes habitudes.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#111827",
