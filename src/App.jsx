@@ -1,56 +1,46 @@
-﻿import { useState, useEffect } from 'react'
-import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { BrowserRouter, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import HomePage from './pages/HomePage'
 import TimerPage from './pages/TimerPage'
 import TodoPage from './pages/TodoPage'
 import HabitsPage from './pages/HabitsPage'
 
-function App() {
-  const [darkMode, setDarkMode] = useState(true)
+const links = [
+  { to: '/', label: 'Vue d’ensemble', icon: '◫', end: true },
+  { to: '/timer', label: 'Studio focus', icon: '◉' },
+  { to: '/todo', label: 'Tâches', icon: '☷' },
+  { to: '/habits', label: 'Habitudes', icon: '✳' },
+]
+
+function Shell() {
+  const [now, setNow] = useState(new Date())
+  const location = useLocation()
+  const current = links.find((link) => link.to === location.pathname)
   useEffect(() => {
-    const savedMode = localStorage.getItem('darkMode')
-    if (savedMode !== null) setDarkMode(savedMode === 'true')
+    const id = setInterval(() => setNow(new Date()), 30_000)
+    return () => clearInterval(id)
   }, [])
-  useEffect(() => {
-    localStorage.setItem('darkMode', darkMode)
-    if (darkMode) document.documentElement.classList.add('dark')
-    else document.documentElement.classList.remove('dark')
-  }, [darkMode])
   return (
-    <Router>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <nav className="bg-white dark:bg-gray-800 shadow-md fixed bottom-0 left-0 right-0">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-around items-center h-16">
-              <NavLink to="/" icon="🏠" label="Accueil" />
-              <NavLink to="/timer" icon="⏰" label="Minuteur" />
-              <NavLink to="/todo" icon="📋" label="To-Do" />
-              <NavLink to="/habits" icon="🎯" label="Habitudes" />
-              <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-full">
-                <span className="text-xl">{darkMode ? '☀️' : '🌙'}</span>
-              </button>
-            </div>
-          </div>
+    <div className="app-shell">
+      <aside className="sidebar">
+        <NavLink to="/" className="brand"><span className="brand-mark">F</span><span>FOCUS<span className="brand-dot">.</span></span></NavLink>
+        <div className="workspace-label">WORKSPACE</div>
+        <nav className="side-nav" aria-label="Navigation principale">
+          {links.map((link) => <NavLink key={link.to} to={link.to} end={link.end} className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}><span className="nav-icon">{link.icon}</span><span>{link.label}</span>{link.to === '/timer' && <span className="nav-live" />}</NavLink>)}
         </nav>
-        <main className="pb-16">
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/timer" element={<TimerPage />} />
-            <Route path="/todo" element={<TodoPage />} />
-            <Route path="/habits" element={<HabitsPage />} />
-          </Routes>
-        </main>
+        <div className="sidebar-spacer" />
+        <div className="sidebar-card"><span className="signal-orb"/><div><strong>Mode personnel</strong><small>Vos données restent ici</small></div></div>
+        <div className="profile-row"><div className="avatar">L</div><div><strong>Mon espace</strong><small>Focus individuel</small></div><span className="profile-more">···</span></div>
+      </aside>
+      <div className="main-shell">
+        <header className="topbar"><div className="breadcrumb"><span>FOCUS OS</span><span className="crumb-slash">/</span><strong>{current?.label || 'Espace'}</strong></div><div className="topbar-right"><span className="system-status"><i /> Système prêt</span><span className="topbar-divider"/><span className="topbar-date">{now.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}</span><div className="avatar avatar-small">L</div></div></header>
+        <main className="page-content"><Routes><Route path="/" element={<HomePage />} /><Route path="/timer" element={<TimerPage />} /><Route path="/todo" element={<TodoPage />} /><Route path="/habits" element={<HabitsPage />} /></Routes></main>
+        <nav className="mobile-nav" aria-label="Navigation mobile">{links.map((link) => <NavLink key={link.to} to={link.to} end={link.end} className={({ isActive }) => `mobile-nav-item${isActive ? ' active' : ''}`}><span>{link.icon}</span><small>{link.label.split(' ')[0]}</small></NavLink>)}</nav>
       </div>
-    </Router>
+    </div>
   )
 }
-function NavLink({ to, icon, label }) {
-  const navigate = useNavigate()
-  return (
-    <button onClick={() => navigate(to)} className="flex flex-col items-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-      <span className="text-xl">{icon}</span>
-      <span className="text-xs mt-1">{label}</span>
-    </button>
-  )
+export default function App() {
+  useEffect(() => { document.documentElement.classList.add('dark') }, [])
+  return <BrowserRouter><Shell /></BrowserRouter>
 }
-export default App

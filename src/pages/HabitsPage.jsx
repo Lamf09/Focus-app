@@ -1,105 +1,38 @@
-﻿import { useState, useEffect } from 'react'
-export default function HabitsPage() {
-  const [habits, setHabits] = useState(() => {
-    const saved = localStorage.getItem('habits')
-    return saved ? JSON.parse(saved) : []
-  })
-  const [newHabit, setNewHabit] = useState({ name: '', group: '', days: [true, true, true, true, true, true, true], time: '' })
-  const [showForm, setShowForm] = useState(false)
-  const daysOfWeek = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
-  useEffect(() => {
-    localStorage.setItem('habits', JSON.stringify(habits))
-  }, [habits])
-  const addHabit = (e) => {
-    e.preventDefault()
-    if (newHabit.name.trim() === '') return
-    setHabits([...habits, { ...newHabit, id: Date.now(), completions: {} }])
-    setNewHabit({ name: '', group: '', days: [true, true, true, true, true, true, true], time: '' })
-    setShowForm(false)
-  }
-  const toggleHabit = (id) => {
-    const today = new Date().toISOString().split('T')[0]
-    setHabits(habits.map(habit => {
-      if (habit.id !== id) return habit
-      const newCompletions = { ...habit.completions }
-      if (newCompletions[today]) delete newCompletions[today]
-      else newCompletions[today] = true
-      return { ...habit, completions: newCompletions }
-    }))
-  }
-  const isCompleted = (habit) => {
-    const today = new Date().toISOString().split('T')[0]
-    return habit.completions[today] === true
-  }
-  return (
-    <div className="min-h-screen p-6">
-      <div className="max-w-4xl mx-auto">
-        <header className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Habitudes</h1>
-          <p className="text-gray-600 dark:text-gray-400">{new Date().toLocaleDateString('fr-FR', { weekday: 'long' })}</p>
-        </header>
-        <div className="mb-6">
-          <button onClick={() => setShowForm(!showForm)} className="bg-blue-600 text-white w-full py-3 rounded-lg">
-            {showForm ? 'Annuler' : '+ Ajouter une habitude'}
-          </button>
-        </div>
-        {showForm && (
-          <form onSubmit={addHabit} className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-md mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Nouvelle habitude</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2">Nom *</label>
-                <input type="text" value={newHabit.name} onChange={(e) => setNewHabit({...newHabit, name: e.target.value})} placeholder="Ex: Boire 2L d'eau" className="w-full p-2 border rounded" required />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2">Groupe</label>
-                <input type="text" value={newHabit.group} onChange={(e) => setNewHabit({...newHabit, group: e.target.value})} placeholder="Ex: Santé" className="w-full p-2 border rounded" />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2">Jours</label>
-                <div className="flex flex-wrap gap-2">
-                  {daysOfWeek.map((day, i) => (
-                    <button key={day} type="button" onClick={() => { const d = [...newHabit.days]; d[i] = !d[i]; setNewHabit({...newHabit, days: d}) }} className={`px-3 py-1 rounded-lg text-sm ${newHabit.days[i] ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
-                      {day}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2">Heure</label>
-                <input type="time" value={newHabit.time} onChange={(e) => setNewHabit({...newHabit, time: e.target.value})} className="w-full p-2 border rounded" />
-              </div>
-            </div>
-            <button type="submit" className="bg-blue-600 text-white w-full mt-4 py-2 rounded">Ajouter</button>
-          </form>
-        )}
-        <div className="space-y-4">
-          {habits.length === 0 ? (
-            <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-md text-center">
-              <p className="text-gray-500 dark:text-gray-400">Aucune habitude. Ajoute-en une !</p>
-            </div>
-          ) : (
-            Object.entries(habits.reduce((acc, h) => {
-              const group = h.group || 'Sans groupe'
-              if (!acc[group]) acc[group] = []
-              acc[group].push(h)
-              return acc
-            }, {})).map(([group, groupHabits]) => (
-              <div key={group} className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-md">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">{group}</h3>
-                <div className="space-y-2">
-                  {groupHabits.map(habit => (
-                    <div key={habit.id} className={`flex items-center gap-4 p-2 rounded-lg ${isCompleted(habit) ? 'bg-green-100 dark:bg-green-900/20' : ''}`}>
-                      <input type="checkbox" checked={isCompleted(habit)} onChange={() => toggleHabit(habit.id)} className="w-5 h-5" />
-                      <span className={`flex-1 ${isCompleted(habit) ? 'line-through' : ''}`}>{habit.name}{habit.time && ` (${habit.time})`}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-    </div>
-  )
+import { useEffect, useMemo, useState } from 'react'
+
+const dayNames=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim']
+const todayDate=()=>{const d=new Date();d.setHours(0,0,0,0);return d}
+const keyFor=(date)=>`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`
+const weekdayIndex=(date)=>(date.getDay()+6)%7
+const blankHabit=()=>({name:'',group:'Personnel',time:'',days:[true,true,true,true,true,true,true]})
+const getSaved=()=>{try{return JSON.parse(localStorage.getItem('habits')||'[]').map(h=>({...h,days:Array.isArray(h.days)?h.days:[true,true,true,true,true,true,true],completions:h.completions||{}}))}catch{return []}}
+function streakFor(habit,today){let streak=0;const cursor=new Date(today);if(habit.completions?.[keyFor(cursor)]){}else cursor.setDate(cursor.getDate()-1);for(let i=0;i<366;i++){if(habit.days[weekdayIndex(cursor)]){if(habit.completions?.[keyFor(cursor)])streak++;else break}cursor.setDate(cursor.getDate()-1)}return streak}
+
+export default function HabitsPage(){
+  const [habits,setHabits]=useState(getSaved)
+  const [form,setForm]=useState(blankHabit)
+  const [showForm,setShowForm]=useState(false)
+  const today=useMemo(todayDate,[])
+  const todayKey=keyFor(today)
+  const week=useMemo(()=>Array.from({length:7},(_,i)=>{const d=new Date(today);d.setDate(today.getDate()-weekdayIndex(today)+i);return d}),[today])
+  useEffect(()=>localStorage.setItem('habits',JSON.stringify(habits)),[habits])
+  const scheduledElapsed=habits.reduce((n,h)=>n+week.filter(d=>d<=today&&h.days[weekdayIndex(d)]).length,0)
+  const completedElapsed=habits.reduce((n,h)=>n+week.filter(d=>d<=today&&h.days[weekdayIndex(d)]&&h.completions?.[keyFor(d)]).length,0)
+  const rate=scheduledElapsed?Math.round(completedElapsed/scheduledElapsed*100):0
+  const doneToday=habits.filter(h=>h.completions?.[todayKey]).length
+  const bestStreak=habits.reduce((n,h)=>Math.max(n,streakFor(h,today)),0)
+  const weeklyDays=week.map((d)=>{const expected=habits.filter(h=>h.days[weekdayIndex(d)]&&d<=today);const done=expected.filter(h=>h.completions?.[keyFor(d)]).length;return {date:d,expected:expected.length,done,rate:expected.length?done/expected.length:0}})
+  const toggle=(id)=>setHabits(current=>current.map(h=>{if(h.id!==id)return h;const completions={...h.completions};if(completions[todayKey])delete completions[todayKey];else completions[todayKey]=true;return {...h,completions}}))
+  const submit=(e)=>{e.preventDefault();if(!form.name.trim())return;setHabits(current=>[...current,{...form,name:form.name.trim(),id:Date.now(),completions:{}}]);setForm(blankHabit());setShowForm(false)}
+  const groups=habits.reduce((acc,h)=>{const name=h.group?.trim()||'Personnel';(acc[name] ||= []).push(h);return acc},{})
+  return <div className="page-enter">
+    <header className="page-header"><div><div className="eyebrow"><span className="eyebrow-line"/> SYSTÈME DE ROUTINES</div><h1>Les petites choses<span className="accent-text"> s’additionnent.</span></h1><p className="page-subtitle">Votre régularité, rendue visible. Aujourd’hui · {today.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</p></div><button className="button button-primary" onClick={()=>setShowForm(!showForm)}>{showForm?'Fermer':'＋ Nouvelle habitude'}</button></header>
+    <section className="habit-overview"><article className="panel habit-stat"><span className="stat-label">RÉUSSITE CETTE SEMAINE</span><strong>{rate}<small> %</small></strong><div className="stat-caption">{completedElapsed} habitudes tenues sur {scheduledElapsed} prévues</div></article><article className="panel habit-stat"><span className="stat-label">ACCOMPLIES AUJOURD’HUI</span><strong>{doneToday}<small> / {habits.length}</small></strong><div className="stat-caption">Chaque coche est un pas en avant</div></article><article className="panel habit-stat"><span className="stat-label">MEILLEURE SÉRIE ACTIVE</span><strong>{bestStreak}<small> jours</small></strong><div className="stat-caption">La constance se construit un jour à la fois</div></article></section>
+    <section className="habit-layout">
+      <article className="panel habit-list-panel"><div className="panel-heading"><div><div className="eyebrow">VOTRE CHECK-IN</div><h2>Routine du jour</h2></div><span className="panel-pill">{doneToday} / {habits.length} FAIT{doneToday===1?'':'S'}</span></div>
+        {habits.length===0?<div className="habit-empty"><strong>Votre prochaine habitude commence ici.</strong>Ajoutez une routine et suivez vos progrès jour après jour.<br/><button className="text-link habit-empty-action" onClick={()=>setShowForm(true)}>Créer ma première habitude ↗</button></div>:Object.entries(groups).map(([group,items])=><div className="habit-group" key={group}><div className="habit-group-title">{group.toUpperCase()} <span>· {items.length}</span></div>{items.map(h=>{const checked=Boolean(h.completions?.[todayKey]);const streak=streakFor(h,today);return <div className={`habit-row${checked?' habit-row-done':''}`} key={h.id}><div className="habit-row-top"><button className={`habit-toggle${checked?' done':''}`} aria-label={`${checked?'Annuler':'Valider'} ${h.name}`} onClick={()=>toggle(h.id)}>{checked?'✓':''}</button><span className="habit-name">{h.name}</span>{h.time&&<span className="habit-meta">◷ {h.time}</span>}{streak>0&&<span className="habit-streak">↗ {streak} j</span>}</div><div className="week-dots" aria-label="Progression de la semaine">{week.map((d,i)=>{const active=Boolean(h.days[i]),complete=Boolean(h.completions?.[keyFor(d)]);return <span key={i} className={`week-dot${complete?' is-done':''}${keyFor(d)===todayKey?' is-today':''}${!active?' is-inactive':''}`} title={`${dayNames[i]}${complete?' · accomplie':active?' · prévue':' · repos'}`}>{complete?'✓':dayNames[i].slice(0,1)}</span>})}</div><div className="week-caption"><span>{h.group||'Personnel'}{h.time?` · ${h.time}`:''}</span><span>{h.days.filter(Boolean).length} j / semaine</span></div></div>})}</div>)}</article>
+      <article className="panel habit-analytics"><div className="panel-heading"><div><div className="eyebrow">VUE HEBDOMADAIRE</div><h2>Votre rythme</h2></div><span className="panel-pill">CETTE SEMAINE</span></div><div className="week-rate"><div className="rate-ring" style={{'--rate':`${rate*3.6}deg`}}><strong>{rate}%</strong></div><div className="rate-copy"><strong>{rate>=80?'Belle régularité':rate>0?'Le rythme se construit':'À votre rythme'}</strong><span>{completedElapsed} validations<br/>sur {scheduledElapsed} occasions</span></div></div><div className="week-strip">{weeklyDays.map((day,i)=><div className="week-day" key={i}><b className={`${day.expected&&day.rate>=.8?'is-good':''}${keyFor(day.date)===todayKey?' is-today':''}`} title={`${day.done}/${day.expected} habitudes`}>{day.expected?`${Math.round(day.rate*100)}%`:'—'}</b><span>{dayNames[i]}</span></div>)}</div><div className="chart-legend habit-legend"><span><i/> Objectif du jour atteint</span><span>Calculé à partir de vos jours prévus</span></div></article>
+    </section>
+    {showForm&&<section className="panel habit-add-panel page-enter"><div className="panel-heading"><div><div className="eyebrow">NOUVEAU REPÈRE</div><h2>Créer une habitude</h2></div></div><form className="habit-form habit-form-expanded" onSubmit={submit}><label className="field-group"><span className="field-label">Nom de l’habitude</span><input autoFocus className="field-control" placeholder="Ex. Lire 20 minutes" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} required maxLength={60}/></label><label className="field-group"><span className="field-label">Catégorie</span><input className="field-control" placeholder="Ex. Bien-être" value={form.group} onChange={e=>setForm({...form,group:e.target.value})} maxLength={30}/></label><label className="field-group"><span className="field-label">Rappel</span><input className="field-control" type="time" value={form.time} onChange={e=>setForm({...form,time:e.target.value})}/></label><div className="days-selector"><span className="field-label">Jours prévus</span><div>{dayNames.map((day,i)=><button type="button" key={day} aria-pressed={form.days[i]} className={`day-toggle${form.days[i]?' selected':''}`} onClick={()=>setForm({...form,days:form.days.map((v,j)=>i===j?!v:v)})}>{day}</button>)}</div></div><button className="button button-primary" type="submit">Ajouter à ma routine <span>↗</span></button></form></section>}
+  </div>
 }
