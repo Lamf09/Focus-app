@@ -1,8 +1,16 @@
-﻿{
+{
+  "id": "/",
   "name": "Focus App",
-  "short_name": "FocusApp",
+  "short_name": "Focus",
+  "description": "Gère ton temps, tes tâches et tes habitudes avec Focus App.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#111827",
-  "theme_color": "#111827"
+  "background_color": "#080b12",
+  "theme_color": "#080b12",
+  "categories": ["productivity"],
+  "icons": [
+    { "src": "/icons/icon-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
 }
