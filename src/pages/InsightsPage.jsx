@@ -29,9 +29,10 @@ export default function InsightsPage() {
   const focusMinutes = focusSessions.reduce((sum, session) => sum + (session.minutes || 0), 0)
   const doneTasks = tasks.filter((task) => task.completedAt && new Date(task.completedAt) >= start && new Date(task.completedAt) < end).length
   const habitCompletions = habits.reduce((sum, habit) => sum + Object.keys(habit.completions || {}).filter(inRange).length, 0)
+  const elapsedDates = dates.filter((date) => date <= today)
   const scheduledCount = habits.reduce((sum, habit) => {
-    if ((habit.schedule?.type || 'days') === 'weekly') return sum + (habit.schedule?.target || 3) * Math.max(1, Math.ceil(dates.length / 7))
-    return sum + dates.filter((date) => isScheduled(habit, date)).length
+    if ((habit.schedule?.type || 'days') === 'weekly') return sum + Math.ceil((habit.schedule?.target || 3) * elapsedDates.length / 7)
+    return sum + elapsedDates.filter((date) => isScheduled(habit, date)).length
   }, 0)
   const missedHabits = Math.max(0, scheduledCount - habitCompletions)
   const habitRate = scheduledCount ? Math.min(100, Math.round(habitCompletions / scheduledCount * 100)) : null
